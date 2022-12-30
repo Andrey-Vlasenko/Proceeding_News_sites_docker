@@ -4,14 +4,13 @@ from airflow.models import Variable
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 from airflow.hooks.postgres_hook import PostgresHook
 
-
-from sqlalchemy import create_engine
 import sys
 sys.path.append("./src/modules/")
 from LoadData_fin import *
 from sql_requests import *
 
 """
+from sqlalchemy import create_engine
 pg_hostname = 'host.docker.internal'
 pg_port = '5430'
 pg_username = 'postgres'
@@ -40,11 +39,11 @@ def load_data_to_psql(source_num : int = 0):
     #source_num=0
     with engine.begin() as connection:
         if(source_num==0):
-            last_time = connection.execute(SQL_get_max_time_lenta).fetchone()[0]    
+            last_time = connection.execute(SQL_get_max_time(0)).fetchone()[0]    
         elif(source_num==1):
-            last_time = connection.execute(SQL_get_max_time_vedomosti).fetchone()[0]
+            last_time = connection.execute(SQL_get_max_time(1)).fetchone()[0]
         elif(source_num==2):
-            last_time = connection.execute(SQL_get_max_time_tass).fetchone()[0]
+            last_time = connection.execute(SQL_get_max_time(2)).fetchone()[0]
         else:
             last_time = None
         if last_time==None:
@@ -66,7 +65,7 @@ def load_data_to_psql(source_num : int = 0):
             try:
                 train=pd.DataFrame(columns=cols)
                 train=pd.concat([train,
-                                pd.DataFrame(connection.execute(SQL_get_resent_data)\
+                                pd.DataFrame(connection.execute(SQL_get_resent_data())\
                                              .fetchall())])
                 train = train.merge(cat_change,left_on=['source_name','category_0'],
                                right_on=['source_name','old_category'],
@@ -95,7 +94,7 @@ def load_data_to_psql(source_num : int = 0):
         print(news.groupby('category_6').category_6.count())
         news.category_0=news.category_0.fillna('Unknown')
         
-        news.to_sql('tmp_news', con=connection, 
+        news.to_sql(f'tmp_news{source_num}', con=connection, 
                    if_exists='append', index=False)
 
 def read_lenta_news():
@@ -134,7 +133,7 @@ with DAG(dag_id="collect_data_lenta", start_date=datetime(2022, 12, 24),
     update_final_data = PostgresOperator(
                                     task_id="update_data_in_sql",
                                     postgres_conn_id=Variable.get("connection_id"),
-                                    sql=SQL_proceed_new_data)
+                                    sql=SQL_proceed_new_data(0))
     
     # Set dependencies between tasks
     read_task >> load_to_psql_tsk >> update_final_data
@@ -151,7 +150,7 @@ with DAG(dag_id="collect_data_vedomosti", start_date=datetime(2022, 12, 24),
     update_final_data = PostgresOperator(
                                     task_id="update_data_in_sql",
                                     postgres_conn_id=Variable.get("connection_id"),
-                                    sql=SQL_proceed_new_data)
+                                    sql=SQL_proceed_new_data(1))
     
     # Set dependencies between tasks
     read_task >> load_to_psql_tsk >> update_final_data
@@ -168,7 +167,7 @@ with DAG(dag_id="collect_data_tass", start_date=datetime(2022, 12, 24),
     update_final_data = PostgresOperator(
                                     task_id="update_data_in_sql",
                                     postgres_conn_id=Variable.get("connection_id"),
-                                    sql=SQL_proceed_new_data)
+                                    sql=SQL_proceed_new_data(2))
     # Set dependencies between tasks
     read_task >> load_to_psql_tsk >> update_final_data
 

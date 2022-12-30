@@ -1,12 +1,11 @@
-FROM python:3.7
+FROM python:3.11
 WORKDIR /app
 COPY requirements.txt requirements.txt
-RUN python -m pip install --upgrade pip
-RUN pip3 install -r requirements.txt
-RUN pip3 install -U sklearn
-RUN pip3 install -U nltk
-RUN pip3 install -U scikit-learn
-RUN pip3 install sklearn
-RUN pip3 install nltk
-RUN pip3 install scikit-learn
+RUN python -m pip install --upgrade pip 
+RUN python -m pip install --upgrade pip wheel
+USER airflow
+RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir -U sklearn nltk
+RUN pip install -U sklearn nltk
+RUN pip install sklearn nltk
 COPY . .
