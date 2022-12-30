@@ -4,6 +4,8 @@ from airflow.models import Variable
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 from airflow.hooks.postgres_hook import PostgresHook
 
+import pickle
+from joblib import dump, load
 import sys
 sys.path.append("./src/modules/")
 from LoadData_fin import *
@@ -74,8 +76,8 @@ def load_data_to_psql(source_num : int = 0):
                     .append(news[['title','new_category']])
                 train = train.dropna(subset=['title','new_category'])
                 train  = train.drop_duplicates()
-                pred = predict_category(train.title, train.new_category,
-                                 news.title[news.new_category.isna()])
+                pred = predict_category(news.title[news.new_category.isna()])#,
+                                        #train.title, train.new_category)
                 print(news.title[news.new_category.isna()],
                       news.category_0[news.new_category.isna()],
                       pred)

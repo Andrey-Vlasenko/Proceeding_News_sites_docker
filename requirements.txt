@@ -8,3 +8,5 @@ pytz
 regex
 sys
 sqlalchemy
+joblib
+sklearn
